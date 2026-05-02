@@ -52,7 +52,7 @@ git --version
 > **Screenshot 1:** Take a screenshot of your terminal showing both version
 > checks and insert it here.
 >
-> `[insert screenshot]`
+> `<img width="751" height="72" alt="1" src="https://github.com/user-attachments/assets/94c55f1b-c3d9-4fa2-b226-d66bd553f212" />`
 
 ---
 
