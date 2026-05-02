@@ -293,7 +293,7 @@ sqlite3 library.db < schema.sql
 > **Screenshot 2:** Take a screenshot of the terminal showing the `.tables`
 > output and insert it here.
 >
-> `[insert screenshot]`
+> <img width="431" height="118" alt="2" src="https://github.com/user-attachments/assets/4eff2952-d60c-4fe0-8f47-17851988ebcf" />
 
 ### Task 2c – Commit
 
@@ -347,11 +347,13 @@ git log --oneline
 author who has written at least one book in the catalogue?
 
 > *Your answer:*
+  Ein DELETE eines Autors ist nicht erlaubt, solange Bücher über writes mit ihm verbunden sind (RESTRICT verhindert das Löschen).
 
 **Question 2.2:** `email` in `member` is declared `UNIQUE` but is not the
 primary key. Using the vocabulary from Lecture 03, what kind of key is it?
 
 > *Your answer:*
+  Die email ist ein Candidate Key (alternativer Schlüssel), da sie eindeutig ist, aber nicht Primary Key.
 
 **Question 2.3:** SQLite does not enforce `CHECK` or `FOREIGN KEY` constraints
 by default. Run the following and observe what happens:
@@ -375,7 +377,8 @@ by default. Run the following and observe what happens:
 > at runtime?
 
 > *Your answer:*
-
+  Error: FOREIGN KEY constraint failed.
+      This shows that SQLite constraints are defined in DDL but only enforced at       runtime when foreign_keys is ON. When it is OFF, SQLite ignores     referential integrity rules.
 ---
 
 ## 3 – Insert Sample Data
@@ -551,7 +554,8 @@ not in a `WHERE` clause. What would happen to Koch's row if you moved this
 condition into `WHERE return_date IS NULL`? Why? Refer to the formal definition
 of the outer join from Lecture 03.
 
-> *Your answer:*
+>If the condition l.return_date IS NULL is moved from the ON clause to the WHERE clause, the LEFT OUTER JOIN effectively becomes an INNER JOIN. This happens because the WHERE clause filters out all rows where the right table (loan) is NULL, which removes the preserved rows from the left table (member) that have no matching active loans. As a result, members without active loans (e.g. Koch) would disappear from the result.
+ 
 
 ### Task 4f – Set Difference
 
@@ -599,7 +603,7 @@ VALUES (999, 1, '2026-05-01');
 > **Question 5.1:** Which specific constraint fired? Name the table and the
 > foreign key column involved.
 >
-> *Your answer:*
+> The foreign key constraint on loan.member_no referencing member(member_no) failed. The database rejected the insert because member_no = 999 does not exist in the member table, violating referential integrity.
 
 ### Task 5b – Delete a member with active loans
 
@@ -615,7 +619,7 @@ DELETE FROM member WHERE member_no = 102;
 > `DELETE`. What happens to Schneider's loan row? Is this behaviour desirable
 > for a library system? Justify your answer.
 >
-> *Your answer:*
+> If ON DELETE CASCADE is used, deleting a member would automatically delete all related loan records of that member. This means Schneider's loan entries would be removed as well. This is usually not desirable in a library system because loan history should be preserved for auditing and record-keeping purposes.
 
 ### Task 5c – Verify the composite primary key of `writes`
 
@@ -629,7 +633,8 @@ INSERT INTO writes VALUES (1, '978-0-201-96426-4');
 > here – but also a *primary key*. Can a relation have two candidate keys? Give
 > an example from the library schema.
 >
-> *Your answer:*
+> Yes, a relation can have multiple candidate keys. A candidate key is any minimal set of attributes that uniquely identifies a tuple.
+In the library schema, the book relation has isbn as a natural primary key, but isbn is also a candidate key by itself. If we consider alternative designs, a combination like (title, pub_year) could also act as a candidate key in some cases where titles are unique per year. However, in this schema isbn is chosen as the primary key.
 
 ---
 
@@ -734,7 +739,7 @@ If you have not used `scp` before, work through this exercise first:
 > **Screenshot 3:** Take a screenshot of `schema.svg` showing all six entities
 > and all five relationships, and insert it here.
 >
-> `[insert screenshot]`
+> <img width="418" height="368" alt="3" src="https://github.com/user-attachments/assets/1a138d44-c0fe-4a9c-ae0f-7a0a727d95ce" />
 
 Add `schema.svg` to `.gitignore` (it is generated, not authored):
 
@@ -778,7 +783,7 @@ joins. SQL does not prescribe an execution order; the query optimizer may
 reorder these joins freely. Under what condition would reordering a join change
 the *result* of a query? Under what condition is it always safe?
 
-> *Your answer:*
+> Reordering joins changes the result only if the joins are outer joins and NULL-preserving behavior is involved. For inner joins, reordering is always safe because joins are associative and commutative. With inner joins, the result set remains the same regardless of join order, as long as the join conditions are equivalent.
 
 **Question B – NULL semantics:**  
 `return_date` is `NULL` for an open loan. `NULL` in SQL does not mean zero or
@@ -786,7 +791,7 @@ false – it means *unknown*. Consider the query `WHERE return_date = NULL`.
 Will it return the open loans? Explain why or why not and write the correct
 form.
 
-> *Your answer:*
+> No, WHERE return_date = NULL does not return any rows because NULL cannot be compared using = in SQL. NULL means unknown, so the correct syntax is return_date IS NULL. Only IS NULL correctly filters rows with unknown return_date values.
 
 **Question C – Surrogate vs. natural key:**  
 `book` uses `isbn` as its natural primary key; all other entities use surrogate
@@ -794,7 +799,7 @@ integer keys. Suppose the library occasionally receives books without an ISBN
 (unpublished manuscripts, internal reports). How would this affect the `isbn`
 primary key? What design change would you make?
 
-> *Your answer:*
+> If books without ISBN exist, isbn can no longer be a reliable primary key. A surrogate key such as book_id would be needed to uniquely identify each book, while isbn would become an optional attribute or a unique constraint when available.
 
 **Question D – Relational algebra limitations:**  
 Suppose the library wants to find all members who have borrowed the same copy
@@ -804,12 +809,12 @@ operators of the relational algebra (σ, π, ρ, ×, −) without aggregation?
 What does this tell you about the relationship between relational algebra and
 SQL?
 
-> *Your answer:*
+> The SQL query for finding members who borrowed the same copy more than once requires grouping or aggregation (e.g. COUNT). Pure relational algebra without aggregation cannot express this directly. This shows that SQL is more expressive than the basic relational algebra operators, since SQL includes extensions like GROUP BY and COUNT that are not part of the original algebra.
 
 > **Screenshot 4:** Take a screenshot of your terminal showing the output of
 > the query from Task 4d (the join across four relations), and insert it here.
 >
-> `[insert screenshot]`
+> <img width="408" height="246" alt="4" src="https://github.com/user-attachments/assets/5f634a59-5ff8-4f91-a38c-4d4563149eec" />
 
 ---
 
@@ -818,8 +823,9 @@ SQL?
 1. **Third normal form check:** Is the `copy` relation in 3NF? Identify all
    functional dependencies and check whether any non-key attribute transitively
    depends on a non-key attribute.
+The relation copy(copy_no, isbn, shelf_loc) is in 3NF because all non-key attributes depend only on the primary key copy_no. There are no transitive dependencies or partial dependencies.
 
-2. **Index experiment:** Load 10 000 rows into `loan` using a script that
+3. **Index experiment:** Load 10 000 rows into `loan` using a script that
    generates random (but valid) `member_no` and `copy_no` values. Time the
    query `SELECT * FROM loan WHERE member_no = 101` before and after creating
    an index:
@@ -830,17 +836,30 @@ SQL?
 
    Use SQLite's `.timer ON` to measure. Report the difference.
 
-3. **Recursive CTE:** The library wants to know the "borrow chain" – if
+  - After creating the index on member_no, the query SELECT * FROM loan WHERE member_no = 101 becomes faster because SQLite can use the index instead of scanning the whole table.
+
+5. **Recursive CTE:** The library wants to know the "borrow chain" – if
    member A borrowed a copy and then member B borrowed the same copy after A,
    and then C after B, output all such chains of length ≥ 2 for any copy.
    This requires ordering loans by `loan_date` per copy. Write the query; you
    may need a window function or a self-join.
 
-4. **GitHub Actions:** Add a workflow (`.github/workflows/release.yml`) that:
+   -The query uses a self-join on the loan table to find sequences where the same copy was borrowed by different members in chronological order based on loan_date.
+   SELECT l1.member_no AS borrower1,
+        l2.member_no AS borrower2,
+        l1.copy_no
+        FROM loan l1
+        JOIN loan l2
+        ON l1.copy_no = l2.copy_no
+        AND l1.loan_date < l2.loan_date;
+
+7. **GitHub Actions:** Add a workflow (`.github/workflows/release.yml`) that:
    - Installs PlantUML
    - Renders `schema.puml` to `schema.svg`
    - Publishes a GitHub Release with `schema.svg` attached on every `v*` tag
-   
+
+  The workflow automatically builds schema.svg using PlantUML and creates a GitHub release whenever a version tag (v*) is pushed.
+  
    Tag `v1.0.0` and verify the release is created automatically.
 
 ---
