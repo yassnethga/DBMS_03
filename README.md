@@ -175,14 +175,16 @@ Complete the sketch for all six relations (`author`, `book`, `writes`, `copy`,
 > relational model? What would go wrong if you stored multiple author IDs in a
 > single column of `book`?
 >
-> *Your answer:*
+> An N:M relationship requires a separate join relation because relational databases store values in atomic form (1NF). A book can have multiple authors, and an author can write multiple books, which cannot be represented properly in a single column.
+
+If multiple author IDs were stored in one column of book, it would violate normalization rules, make querying difficult, and break referential integrity, since foreign keys cannot be enforced on multiple values inside a single field.
 
 > **Question 1.2:** `loan_id` is a surrogate key even though a loan might seem
 > to be uniquely identified by `(member_no, copy_no, loan_date)`. Name one
 > realistic scenario in which that composite key would fail to be a candidate
 > key.
 >
-> *Your answer:*
+> A composite key like (member_no, copy_no, loan_date) would fail as a candidate key if a member borrows the same copy more than once on the same date, or if multiple loan events occur that share the same combination of these attributes. In such cases, the combination would no longer be unique, which is why a surrogate key (loan_id) is more reliable.
 
 ---
 
@@ -472,7 +474,9 @@ $$\sigma_{\mathrm{shelf\_loc}\ \mathrm{LIKE}\ \texttt{'A\%'}}(\textsc{copy})$$
 SQL:
 
 ```sql
--- write your query here
+SELECT *
+FROM copy
+WHERE shelf_loc LIKE 'A%';
 ```
 
 > Expected result: copy\_no 1 and 2.
@@ -487,7 +491,8 @@ $$\pi_{\mathrm{title},\,\mathrm{pub\_year}}(\textsc{book})$$
 SQL:
 
 ```sql
--- write your query here
+SELECT title, pub_year
+FROM book;
 ```
 
 > Expected result: three rows, two columns each.
@@ -503,7 +508,9 @@ $$\pi_{\mathrm{isbn},\,\mathrm{shelf\_loc}}\!\left(\sigma_{\mathrm{shelf\_loc} \
 SQL:
 
 ```sql
--- write your query here
+SELECT isbn, shelf_loc
+FROM copy
+WHERE shelf_loc >= 'B';
 ```
 
 > Expected result: copy\_no 3 (B-07) and copy\_no 4 (C-12).
@@ -524,7 +531,12 @@ $$\pi_{\mathrm{full\_name},\,\mathrm{title}}\!\left(
 SQL:
 
 ```sql
--- write your query here
+SELECT m.full_name, b.title
+FROM loan l
+JOIN member m ON l.member_no = m.member_no
+JOIN copy c ON l.copy_no = c.copy_no
+JOIN book b ON c.isbn = b.isbn
+WHERE l.return_date IS NULL;
 ```
 
 > Expected result: two rows – Schneider borrowing *Database Management Systems*,
@@ -569,7 +581,11 @@ $$\pi_{\mathrm{isbn}}(\textsc{book}) - \pi_{\mathrm{isbn}}\!\left(\textsc{copy} 
 In SQL, set difference is expressed with `EXCEPT`:
 
 ```sql
--- write your query here
+SELECT isbn FROM book
+EXCEPT
+SELECT c.isbn
+FROM copy c
+JOIN loan l ON c.copy_no = l.copy_no;
 ```
 
 > Expected result: *The C Programming Language* (copy 4 was never loaned).
@@ -602,7 +618,7 @@ VALUES (999, 1, '2026-05-01');
 
 > **Question 5.1:** Which specific constraint fired? Name the table and the
 > foreign key column involved.
->
+
 > The foreign key constraint on loan.member_no referencing member(member_no) failed. The database rejected the insert because member_no = 999 does not exist in the member table, violating referential integrity.
 
 ### Task 5b – Delete a member with active loans
@@ -618,8 +634,7 @@ DELETE FROM member WHERE member_no = 102;
 > `ON DELETE CASCADE` on `loan.member_no` instead of `RESTRICT`. Run the same
 > `DELETE`. What happens to Schneider's loan row? Is this behaviour desirable
 > for a library system? Justify your answer.
->
-> If ON DELETE CASCADE is used, deleting a member would automatically delete all related loan records of that member. This means Schneider's loan entries would be removed as well. This is usually not desirable in a library system because loan history should be preserved for auditing and record-keeping purposes.
+  If ON DELETE CASCADE is used, deleting a member would automatically delete all related loan records of that member. This means Schneider's loan entries would be removed as well. This is usually not desirable in a library system because loan history should be preserved for auditing and record-keeping purposes.
 
 ### Task 5c – Verify the composite primary key of `writes`
 
@@ -632,8 +647,8 @@ INSERT INTO writes VALUES (1, '978-0-201-96426-4');
 > **Question 5.3:** The composite key `(author_id, isbn)` is a *candidate key*
 > here – but also a *primary key*. Can a relation have two candidate keys? Give
 > an example from the library schema.
->
-> Yes, a relation can have multiple candidate keys. A candidate key is any minimal set of attributes that uniquely identifies a tuple.
+
+>  Yes, a relation can have multiple candidate keys. A candidate key is any minimal set of attributes that uniquely identifies a tuple.
 In the library schema, the book relation has isbn as a natural primary key, but isbn is also a candidate key by itself. If we consider alternative designs, a combination like (title, pub_year) could also act as a candidate key in some cases where titles are unique per year. However, in this schema isbn is chosen as the primary key.
 
 ---
